@@ -1,0 +1,45 @@
+groups:
+  - name: sneakstore-alerts
+    rules:
+      - alert: ServiceDown
+        expr: up == 0
+        for: 10s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.job }} is DOWN"
+          description: "Service {{ $labels.job }} has been unreachable for more than 10 seconds"
+
+      - alert: HighCPUUsage
+        expr: |
+          rate(container_cpu_usage_seconds_total{name=~"auth_service_tf|product_service_tf|order_service_tf|user_service_tf"}[1m]) * 100 > 80
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage"
+          description: "Container {{ $labels.name }} has CPU usage above 80%"
+
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(flask_http_request_total{status=~"5.."}[5m])) 
+          / 
+          sum(rate(flask_http_request_total[5m])) * 100 > 5
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High 5xx error rate"
+          description: "More than 5% of requests are returning 5xx errors"
+
+      - alert: SlowResponses
+        expr: |
+          rate(flask_http_request_duration_seconds_sum[5m]) 
+          / 
+          rate(flask_http_request_duration_seconds_count[5m]) > 0.5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow response time"
+          description: "Average response time exceeds 0.5 seconds"
