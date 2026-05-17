@@ -20,6 +20,8 @@
     <div class="navbar-nav ms-auto">
         <a class="nav-link" href="/">Главная</a>
         {% if user %}
+            <a class="nav-link" href="http://localhost:5007">Рекомендации</a>
+            <a class="nav-link" href="http://localhost:5006">Остатки</a>
             <a class="nav-link" href="/orders">Заказы</a>
             <a class="nav-link" href="/logout">Выйти ({{ user }})</a>
         {% else %}

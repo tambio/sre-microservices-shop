@@ -1,0 +1,4 @@
+app_name: sneakstore
+deploy_path: /opt/sneakstore
+terraform_version: "1.5.0"
+docker_compose_version: "2.20.0"

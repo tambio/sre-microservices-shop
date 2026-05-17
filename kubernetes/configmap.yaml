@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: sneakstore
+data:
+  DB_HOST: "postgres-service"
+  DB_NAME: "sneakstore"
+  DB_USER: "postgres"
+  DB_PASSWORD: "postgres"

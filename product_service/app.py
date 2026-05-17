@@ -26,7 +26,7 @@ def get_products():
     try:
         conn = get_db()
         cur = conn.cursor()
-        cur.execute("SELECT id, name, price, stock FROM products")
+        cur.execute("SELECT id, name, price, stock, COALESCE(image_url, '') FROM products ORDER BY id")
         products = cur.fetchall()
         cur.close()
         conn.close()
@@ -69,16 +69,15 @@ def register_user(username, password):
         conn = get_db()
         cur = conn.cursor()
         
-        # Проверяем, существует ли уже такой пользователь
+        # чек на наличие 
         cur.execute("SELECT id FROM users WHERE username = %s", (username,))
         existing = cur.fetchone()
         
         if existing:
             cur.close()
             conn.close()
-            return "exists"  # Пользователь уже есть
+            return "exists" 
         
-        # Создаём нового
         cur.execute("INSERT INTO users (username, password) VALUES (%s, %s)", (username, password))
         conn.commit()
         cur.close()
@@ -96,18 +95,16 @@ def login_user(username, password):
         user = cur.fetchone()
         cur.close()
         conn.close()
-        return user  # (id, username) или None
+        return user  
     except Exception as e:
         print(f"login_user error: {e}")
         return None
 
-# ---------- Главная ----------
 @app.route('/')
 def index():
     products = get_products()
     return render_template('index.html', products=products, user=session.get('username'))
 
-# ---------- Регистрация ----------
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -128,7 +125,6 @@ def register():
     
     return render_template('register.html')
 
-# ---------- Вход ----------
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -145,13 +141,11 @@ def login():
     
     return render_template('login.html')
 
-# ---------- Выход ----------
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect('/')
 
-# ---------- Заказы ----------
 @app.route('/orders')
 def orders_page():
     if 'user_id' not in session:
@@ -160,21 +154,36 @@ def orders_page():
     orders = get_orders(session['user_id'])
     return render_template('orders.html', orders=orders, user=session.get('username'))
 
-# ---------- Купить ----------
+
 @app.route('/buy', methods=['POST'])
 def buy():
     if 'user_id' not in session:
         return redirect('/login')
     
     product_id = request.form.get('product_id')
-    if create_order(session['user_id'], product_id):
-        products = get_products()
-        return render_template('index.html', products=products, user=session.get('username'), message='Заказ успешно создан!', msg_type='success')
-    
     products = get_products()
-    return render_template('index.html', products=products, user=session.get('username'), message='Ошибка создания заказа', msg_type='error')
+    
+    #  чек остатка Inventory Service
+    try:
+        import requests
+        response = requests.post(f'http://inventory_service_tf:5000/inventory/{product_id}/reserve', timeout=5)
+        result = response.json()
+        
+        if not result.get('success'):
+            return render_template('index.html', products=products, user=session.get('username'), 
+                                 message=result.get('error', 'Товар закончился, скоро будет!'), msg_type='error')
+    except Exception as e:
+        print(f"Inventory error: {e}")
+        # обход если инвентори недоступен, но товар есть в БД
+        pass
+    
+    if create_order(session['user_id'], product_id):
+        return render_template('index.html', products=products, user=session.get('username'), 
+                             message='Заказ успешно создан!', msg_type='success')
+    
+    return render_template('index.html', products=products, user=session.get('username'), 
+                         message='Ошибка создания заказа', msg_type='error')
 
-# ---------- API ----------
 @app.route('/health')
 def health():
     db = get_db()
@@ -186,7 +195,7 @@ def health():
 @app.route('/products')
 def api_products():
     products = get_products()
-    return [{"id": p[0], "name": p[1], "price": float(p[2]), "stock": p[3]} for p in products]
+    return [{"id": p[0], "name": p[1], "price": float(p[2]), "stock": p[3], "image_url": p[4]} for p in products]
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

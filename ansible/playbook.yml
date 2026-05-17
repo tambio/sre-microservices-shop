@@ -1,0 +1,78 @@
+---
+- name: Deploy SneakStore Microservices
+  hosts: servers
+  become: yes
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Install Docker Compose
+      apt:
+        name: docker-compose-v2
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Start Docker service
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Install Python pip
+      apt:
+        name: python3-pip
+        state: present
+
+    - name: Install Terraform
+      apt:
+        name: terraform
+        state: present
+
+    - name: Copy project files to server
+      copy:
+        src: ../ 
+        dest: /opt/sneakstore
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Initialize Terraform
+      command: terraform init
+      args:
+        chdir: /opt/sneakstore/terraform
+
+    - name: Apply Terraform configuration
+      command: terraform apply -auto-approve
+      args:
+        chdir: /opt/sneakstore/terraform
+
+    - name: Wait for services to start
+      wait_for:
+        timeout: 30
+
+    - name: Check all services health
+      uri:
+        url: "http://localhost:{{ item }}/health"
+      loop:
+        - 5001
+        - 8080
+        - 5003
+        - 5004
+        - 5006
+        - 5007
+      register: health_checks
+      ignore_errors: yes
+
+    - name: Display health status
+      debug:
+        msg: "{{ item.url }} -> {{ item.status }}"
+      loop: "{{ health_checks.results }}"

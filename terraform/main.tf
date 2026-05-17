@@ -150,6 +150,55 @@ resource "docker_container" "user_service" {
   }
 }
 
+# Inventory Service
+resource "docker_image" "inventory_service" {
+  name = "sre3-inventory-service-tf"
+  build {
+    context = abspath("${path.module}/../inventory_service")
+    tag     = ["sre3-inventory-service-tf:latest"]
+  }
+}
+
+resource "docker_container" "inventory_service" {
+  name    = "inventory_service_tf"
+  image   = docker_image.inventory_service.name
+  restart = "unless-stopped"
+
+  ports {
+    internal = 5000
+    external = 5006
+  }
+
+  networks_advanced {
+    name = docker_network.app_network.name
+  }
+}
+
+
+# Recommendation Service
+resource "docker_image" "recommendation_service" {
+  name = "sre3-recommendation-service-tf"
+  build {
+    context = abspath("${path.module}/../recommendation_service")
+    tag     = ["sre3-recommendation-service-tf:latest"]
+  }
+}
+
+resource "docker_container" "recommendation_service" {
+  name    = "recommendation_service_tf"
+  image   = docker_image.recommendation_service.name
+  restart = "unless-stopped"
+
+  ports {
+    internal = 5000
+    external = 5007
+  }
+
+  networks_advanced {
+    name = docker_network.app_network.name
+  }
+}
+
 resource "docker_image" "prometheus" {
   name = "prom/prometheus:latest"
 }

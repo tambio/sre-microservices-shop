@@ -1,0 +1,104 @@
+version: '3.8'
+
+services:
+  auth-service:
+    image: sre3-auth-service-tf:latest
+    ports:
+      - "5001:5000"
+    networks:
+      - app-network
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+
+  product-service:
+    image: sre3-product-service-tf:latest
+    ports:
+      - "8080:5000"
+    networks:
+      - app-network
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: any
+
+  order-service:
+    image: sre3-order-service-tf:latest
+    ports:
+      - "5003:5000"
+    networks:
+      - app-network
+    environment:
+      DB_HOST: host.docker.internal
+      DB_NAME: sneakstore
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: any
+
+  user-service:
+    image: sre3-user-service-tf:latest
+    ports:
+      - "5004:5000"
+    networks:
+      - app-network
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+
+  inventory-service:
+    image: sre3-inventory-service-tf:latest
+    ports:
+      - "5006:5000"
+    networks:
+      - app-network
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+
+  recommendation-service:
+    image: sre3-recommendation-service-tf:latest
+    ports:
+      - "5007:5000"
+    networks:
+      - app-network
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./alert.rules.yml:/etc/prometheus/alert.rules.yml
+    networks:
+      - app-network
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+      - app-network
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+
+networks:
+  app-network:
+    driver: overlay

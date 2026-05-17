@@ -33,3 +33,11 @@ scrape_configs:
   - job_name: 'postgres_exporter'
     static_configs:
       - targets: ['postgres_exporter_tf:9187']
+
+  - job_name: 'inventory_service'
+    static_configs:
+      - targets: ['inventory_service_tf:5000']
+
+  - job_name: 'recommendation_service'
+    static_configs:
+      - targets: ['recommendation_service_tf:5000']

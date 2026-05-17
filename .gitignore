@@ -1,16 +1,13 @@
-# Terraform
+
 terraform/.terraform/
 terraform/.terraform.lock.hcl
 terraform/terraform.tfstate
 terraform/terraform.tfstate.backup
 
-# Docker volumes
 prometheus_data/
 grafana_data/
 
-# Python
 __pycache__/
 *.pyc
 
-# macOS
 .DS_Store
