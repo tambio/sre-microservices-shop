@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, session
 from prometheus_flask_exporter import PrometheusMetrics
 import psycopg2
 import os
+import requests as http_requests
 
 app = Flask(__name__)
 app.secret_key = 'sneakstore-secret-key-2024'
@@ -196,6 +197,33 @@ def health():
 def api_products():
     products = get_products()
     return [{"id": p[0], "name": p[1], "price": float(p[2]), "stock": p[3], "image_url": p[4]} for p in products]
+
+@app.route('/search')
+def search():
+    query = request.args.get('q', '').strip()
+    if not query:
+        return redirect('/')
+    
+    try:
+        response = http_requests.get(f'http://host.docker.internal:9200/products/_search?q={query}', timeout=5)
+        data = response.json()
+        hits = data.get('hits', {}).get('hits', [])
+        
+        search_results = []
+        for hit in hits:
+            src = hit['_source']
+            search_results.append({
+                'id': hit['_id'],
+                'name': src['name'],
+                'price': src['price'],
+                'stock': src['stock'],
+                'image_url': src.get('image_url', '')
+            })
+    except Exception as e:
+        print(f"Search error: {e}")
+        search_results = []
+    
+    return render_template('search.html', results=search_results, query=query, user=session.get('username'))
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
