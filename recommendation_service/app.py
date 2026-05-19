@@ -7,7 +7,7 @@ app = Flask(__name__)
 metrics = PrometheusMetrics(app)
 metrics.info('recommendation_service_info', 'Recommendation Service', version='1.0')
 
-DB_HOST = 'host.docker.internal'
+DB_HOST = 'postgres_db'
 DB_NAME = 'sneakstore'
 DB_USER = 'postgres'
 DB_PASSWORD = 'postgres'

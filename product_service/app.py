@@ -10,7 +10,7 @@ app.secret_key = 'sneakstore-secret-key-2024'
 metrics = PrometheusMetrics(app)
 metrics.info('product_service_info', 'Product Service', version='1.0')
 
-DB_HOST = 'host.docker.internal'
+DB_HOST = 'postgres_db'
 DB_NAME = 'sneakstore'
 DB_USER = 'postgres'
 DB_PASSWORD = 'postgres'
